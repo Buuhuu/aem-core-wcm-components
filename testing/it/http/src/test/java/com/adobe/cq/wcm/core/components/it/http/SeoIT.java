@@ -158,7 +158,9 @@ public class SeoIT {
             assertEquals(expectedSitemapIndex, index);
 
             String expectedSitemap = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                + "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\" xmlns:xhtml=\"http://www.w3.org/1999/xhtml\">"
+                + "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\" xmlns:xhtml=\"http://www.w3.org/1999/xhtml\" "
+                + "xmlns:video=\"http://www.google.com/schemas/sitemap-video/1.1\" xmlns:image=\"http://www.google.com/schemas/sitemap-image/1.1\" "
+                + "xmlns:news=\"http://www.google.com/schemas/sitemap-news/0.9\">"
                 + "<url>"
                 + "<loc>http://integrationtest.local:" + publisherPort + cp + "gb/en.html</loc>"
                 + "<xhtml:link rel=\"alternate\" hreflang=\"en-GB\" href=\"http://integrationtest.local:" + publisherPort + cp + "gb/en.html\"/>"
