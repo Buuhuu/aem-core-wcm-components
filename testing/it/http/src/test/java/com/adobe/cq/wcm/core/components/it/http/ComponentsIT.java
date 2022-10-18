@@ -17,15 +17,13 @@ package com.adobe.cq.wcm.core.components.it.http;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.testing.clients.ClientException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 import org.junit.BeforeClass;
@@ -34,9 +32,9 @@ import org.junit.Test;
 
 import com.adobe.cq.testing.client.CQClient;
 import com.adobe.cq.testing.junit.rules.CQAuthorClassRule;
-import com.google.common.collect.ImmutableMap;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class ComponentsIT {
 
@@ -53,37 +51,28 @@ public class ComponentsIT {
     @Test
     public void testTeaser() throws ClientException, IOException {
         String content = adminAuthor.doGet("/content/core-components/teaser.html", 200).getContent();
+        Document document = parse(content);
 
-
-        testComponent(content, ImmutableMap.of(
-            ".teaser.teaser-v1", Arrays.asList("/components/teaser-v1-with-link-to-asset.html"),
-            ".teaser.teaser-v2", Arrays.asList("/components/teaser-v2-with-link-to-asset.html")
-        ));
+        testComponent(document, ".teaser.teaser-v1", 0, "/components/teaser-v1-with-link-to-asset.html");
+        testComponent(document, ".teaser.teaser-v1", 1, "/components/teaser-v1-with-cta-to-asset.html");
+        testComponent(document, ".teaser.teaser-v2", 0, "/components/teaser-v2-with-link-to-asset.html");
+        testComponent(document, ".teaser.teaser-v2", 1, "/components/teaser-v2-with-cta-to-asset.html");
     }
 
-    private void testComponent(String actualContent, Map<String, List<String>> selectorAndExpectations) throws IOException {
-        Document document = parse(actualContent);
+    private void testComponent(Document actualDocument, String selector, int selectorSetIndex, String expectation) throws IOException {
+        String expected = IOUtils.resourceToString(expectation, StandardCharsets.UTF_8);
+        Document expectedDocument = parse(expected);
 
-        for(Map.Entry<String, List<String>> selectorAndExpectation : selectorAndExpectations.entrySet()) {
-            String selector = selectorAndExpectation.getKey();
-            List<String> expectations = selectorAndExpectation.getValue();
-            for (int i = 0; i < expectations.size(); i++) {
-                String expectation = expectations.get(i);
-                String expected = IOUtils.resourceToString(expectation, StandardCharsets.UTF_8);
-                Document expectedDocument = parse(expected);
+        Element expectedElement = expectedDocument.body().children().first();
+        Element actualElement = actualDocument.select(selector).get(selectorSetIndex);
 
-                assertEquals(
-                    selector + "[" + i + "] does not match " + expectation,
-                    expectedDocument.select(selector).first().toString(),
-                    document.select(selector).get(i).toString()
-                );
-            }
-        }
+        assertNotNull(selector + " did not match any element in the page", actualElement);
+        assertEquals(selector + " does not match " + expectation, expectedElement.toString(), actualElement.toString());
     }
 
     private Document parse(String content) {
         // normalize date times
-        content =  content.replaceAll("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(.\\d{2,4})?", "0000-00-00T00:00:00");
+        content = content.replaceAll("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(.\\d{2,4})?", "0000-00-00T00:00:00");
 
         Document document = Jsoup.parse(content);
         removeNoise(document.select("html").first());
@@ -91,7 +80,7 @@ public class ComponentsIT {
     }
 
     private void removeNoise(Node element) {
-        for (int i = 0; i < element.childNodeSize();) {
+        for (int i = 0; i < element.childNodeSize(); ) {
             Node child = element.childNode(i);
             // remove nodes that are: comments, cq tags
             if (StringUtils.equalsAny(child.nodeName(), "#comment", "cq")) {
