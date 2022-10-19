@@ -252,12 +252,12 @@ public class TeaserImpl extends AbstractImageDelegatingModel implements Teaser {
     protected void initLink() {
         // use the target page as the link if it exists
         link = this.getTargetPage()
-                .map(page -> Optional.of(linkHandler.getLink(page.getPath(), linkTarget).orElse(null)))
+                .map(page -> Optional.of((Link) linkHandler.getLink(page.getPath(), linkTarget).orElse(null)))
                 .orElseGet(() -> {
                     // target page doesn't exist
                     if (this.isActionsEnabled()) {
                         return this.getActions().stream().findFirst()
-                                .map(action -> Optional.ofNullable(linkHandler.getLink(action.getURL(), null).orElse(null)))
+                                .map(action -> Optional.ofNullable(action.getLink()))
                                 .orElse(Optional.empty());
                     } else {
                         // use the property value if actions are not enabled
